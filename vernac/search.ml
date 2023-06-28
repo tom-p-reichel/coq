@@ -235,7 +235,14 @@ let iter_typeclass_members f = List.map (fun x ->
 let rec match_pattern_constr env sigma (pat: constr_pattern) (pat' : constr_pattern) =
   let dec = match_pattern_constr env sigma in
   match pat, pat' with
-| PRef r, PRef r'-> r == r'
+ | PRef r, PRef r'-> true
+  (* QGlobRef.equal env r r'   *)
+(* | PRef r, PRef r'-> (match  (r,r') with   
+                    | VarRef id, VarRef id' -> Names.Id.equal id id'
+                    | ConstRef c, ConstRef c' -> Environ.QConstant.equal env c c'
+                    | IndRef i, IndRef i'-> Environ.QInd.equal env i i'
+                    | ConstructRef c, ConstructRef c' -> Environ.QConstruct.equal env c c'
+                    | _, _ -> false) *)
 | PVar v, PVar v' -> v == v'
 | PEvar _, _
 | _, PEvar _-> true
