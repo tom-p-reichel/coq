@@ -223,6 +223,13 @@ let search_filter query gr kind env sigma typ = match query with
 | GlobSearchKind k -> (match kind with None -> false | Some k' -> k = k')
 | GlobSearchFilter f -> f gr
 
+let iter_typeclass_members f = List.map (fun x ->
+  List.map (fun y -> match y with
+|    Context.Rel.Declaration.LocalAssum (name, ty)
+|    Context.Rel.Declaration.LocalDef (name, ty, _) -> f name
+) (x:Typeclasses.typeclass).cl_props
+) (Typeclasses.typeclasses ())
+
 (** SearchPattern *)
 
 let search_pattern env sigma pat mods pr_search =
@@ -231,12 +238,16 @@ let search_pattern env sigma pat mods pr_search =
     pattern_filter pat ref env sigma (EConstr.of_constr typ) &&
     blacklist_filter ref kind env sigma typ
   in
-  let iter ref kind env typ =
+  let _iter ref kind env typ =
     if filter ref kind env typ then pr_search ref kind env typ
   in
-  generic_search env iter
+  (* generic_search env iter *)
+  (Feedback.msg_info (Pp.str "Hello World")); ignore (iter_typeclass_members (fun n -> match n with { binder_name; binder_relevance } ->
+ Feedback.msg_info (Name.print binder_name )))
 
 (** SearchRewrite *)
+
+
 
 let eq () = Coqlib.(lib_ref "core.eq.type")
 
