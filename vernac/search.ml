@@ -249,7 +249,7 @@ let rec match_pattern_constr env sigma (pat: constr_pattern) (pat' : constr_patt
 | PSort s, PSort s' -> s == s'
 | PMeta op1, PMeta op2 -> op1 == op2
 | PIf (p1, p2, p3), PIf (p1', p2', p3') -> dec p1 p1' && dec p2 p2' && dec p3 p3'
-(* | PCase (_, _, _, _) -> _ *)
+| PCase (cip, Some (na, p1), p2, inapl), PCase (cip', Some (na', p1'), p2', inapl') -> cip == cip' && na == na' && dec p1 p1' && dec p2 p2' && List.for_all2 (fun (i, na, p) -> fun (i', na', p') -> i == i' && na == na' && dec p p') inapl inapl'
 | PFix (i, (n, pa1, pa2)), PFix (i', (n', pa1', pa2')) -> i == i' && n == n' && Array.for_all2 dec pa1 pa1' && Array.for_all2 dec pa2 pa2'
 | PCoFix (i, (n, pa1, pa2)), PCoFix (i', (n', pa1', pa2')) -> i == i' && n == n' && Array.for_all2 dec pa1 pa1' && Array.for_all2 dec pa2 pa2'
 | PInt i, PInt i' -> i == i'
