@@ -226,7 +226,8 @@ let search_filter query gr kind env sigma typ = match query with
 let iter_typeclass_members f = List.map (fun x ->
   List.map (fun y -> match y with
 |    Context.Rel.Declaration.LocalAssum (name, ty)
-|    Context.Rel.Declaration.LocalDef (name, ty, _) -> f name
+|    Context.Rel.Declaration.LocalDef (name, ty, _) -> match name with { binder_name; binder_relevance } ->
+ f ((x:Typeclasses.typeclass).cl_context, binder_name, ty)
 ) (x:Typeclasses.typeclass).cl_props
 ) (Typeclasses.typeclasses ())
 
@@ -242,8 +243,10 @@ let search_pattern env sigma pat mods pr_search =
     if filter ref kind env typ then pr_search ref kind env typ
   in
   (* generic_search env iter *)
-  (Feedback.msg_info (Pp.str "Hello World")); ignore (iter_typeclass_members (fun n -> match n with { binder_name; binder_relevance } ->
- Feedback.msg_info (Name.print binder_name )))
+  (Feedback.msg_info (Pp.str "Hello World")); ignore (iter_typeclass_members (fun (context,n,ty) ->
+ Feedback.msg_info (Name.print n )))
+
+
 
 (** SearchRewrite *)
 
