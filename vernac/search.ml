@@ -224,12 +224,43 @@ let search_filter query gr kind env sigma typ = match query with
 | GlobSearchFilter f -> f gr
 
 let iter_typeclass_members f = List.map (fun x ->
-  List.map (fun y -> match y with
-|    Context.Rel.Declaration.LocalAssum (name, ty)
-|    Context.Rel.Declaration.LocalDef (name, ty, _) -> match name with { binder_name; binder_relevance } ->
- f ((x:Typeclasses.typeclass).cl_context, binder_name, ty)
+  List.map (fun y ->
+  match y with
+    | Context.Rel.Declaration.LocalAssum (name, ty)
+    | Context.Rel.Declaration.LocalDef (name, _, ty) -> match name with { binder_name; binder_relevance } ->
+ f (binder_name, ty)
 ) (x:Typeclasses.typeclass).cl_props
 ) (Typeclasses.typeclasses ())
+
+let rec match_pattern_constr env sigma (pat: constr_pattern) (pat' : constr_pattern) =
+  let dec = match_pattern_constr env sigma in
+  match pat, pat' with
+| PRef r, PRef r'-> r == r'
+| PVar v, PVar v' -> v == v'
+| PEvar _, _
+| _, PEvar _-> true
+| PRel r, PRel r' -> r == r'
+| PApp (p, arg), PApp (p', arg') -> dec p p' && Array.for_all2 dec arg arg'
+| PSoApp (v, argl), PSoApp (v', argl') -> v == v' && List.for_all2 dec argl argl'
+| PProj (pj,  p), PProj (pj',  p') -> pj == pj' && dec p p'
+| PLambda (n, p1, p2), PLambda (n',  p1', p2')
+| PProd (n, p1, p2), PProd (n', p1', p2') ->  n == n' && dec p1 p1' && dec p2 p2'
+| PLetIn (n, p1, Some p2, p3), PLetIn (n', p1', Some p2', p3') -> n == n' && dec p1 p1' && dec p2 p2' && dec p3 p3'
+| PLetIn (n, p1, None, p3), PLetIn (n', p1', None, p3') -> n == n' && dec p1 p1' && dec p3 p3'
+| PSort s, PSort s' -> s == s'
+(*| PMeta op1, PMeta op2 -> op1 == op2 *)
+| PMeta _, _ -> true
+| _, PMeta _ -> true
+(* TODO: class variables *)
+| PIf (p1, p2, p3), PIf (p1', p2', p3') -> dec p1 p1' && dec p2 p2' && dec p3 p3'
+| PCase (cip, Some (na, p1), p2, inapl), PCase (cip', Some (na', p1'), p2', inapl') -> cip == cip' && na == na' && dec p1 p1' && dec p2 p2' && List.for_all2 (fun (i, na, p) -> fun (i', na', p') -> i == i' && na == na' && dec p p') inapl inapl'
+| PCase (cip, None, p2, inapl), PCase (cip', None, p2', inapl') -> cip == cip' && dec p2 p2' && List.for_all2 (fun (i, na, p) -> fun (i', na', p') -> i == i' && na == na' && dec p p') inapl inapl'
+| PFix (i, (n, pa1, pa2)), PFix (i', (n', pa1', pa2')) -> i == i' && n == n' && Array.for_all2 dec pa1 pa1' && Array.for_all2 dec pa2 pa2'
+| PCoFix (i, (n, pa1, pa2)), PCoFix (i', (n', pa1', pa2')) -> i == i' && n == n' && Array.for_all2 dec pa1 pa1' && Array.for_all2 dec pa2 pa2'
+| PInt i, PInt i' -> i == i'
+| PFloat f, PFloat f' -> f == f'
+| PArray (pa, p1, p2), PArray (pa', p1', p2') -> Array.for_all2 dec pa pa' && dec p1 p1' && dec p2 p2'
+| _ -> false
 
 (** SearchPattern *)
 
@@ -243,10 +274,9 @@ let search_pattern env sigma pat mods pr_search =
     if filter ref kind env typ then pr_search ref kind env typ
   in
   (* generic_search env iter *)
-  (Feedback.msg_info (Pp.str "Hello World")); ignore (iter_typeclass_members (fun (context,n,ty) ->
- Feedback.msg_info (Name.print n )))
-
-
+  (Feedback.msg_info (Pp.str "Hello World"));
+  ignore (iter_typeclass_members (fun (name, ty) -> if match_pattern_constr env sigma pat (Patternops.pattern_of_constr env sigma (EConstr.of_constr ty)) then
+    Feedback.msg_info (Name.print name ) else ()))
 
 (** SearchRewrite *)
 
