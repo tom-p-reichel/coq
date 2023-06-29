@@ -24,6 +24,7 @@ val instantiate_pattern : Environ.env ->
   constr_pattern -> instantiated_pattern
 
 type binding_bound_vars = Id.Set.t
+val warn_meta_collision : ?loc:Loc.t -> patvar -> unit
 
 (** [PatternMatchingFailure] is the exception raised when pattern
   matching fails *)

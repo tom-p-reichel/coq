@@ -15,11 +15,7 @@ open Context.Rel.Declaration
 type binding_bound_vars1 = Id.Set.t
 
 
-let warn_meta_collision =
-  CWarnings.create ~name:"meta-collision" ~category:CWarnings.CoreCategories.ltac
-         (fun name ->
-          strbrk "Collision between bound variable " ++ Id.print name ++
-            strbrk " and a metavariable of same name.")
+
 
 
 let constrain sigma n (ids, m) ((names,seen as names_seen), terms as subst) =
@@ -29,7 +25,7 @@ let constrain sigma n (ids, m) ((names,seen as names_seen), terms as subst) =
     if List.equal Id.equal ids ids' && eq_constr sigma m m' then subst
     else raise Constr_matching.PatternMatchingFailure
   with Not_found ->
-    let () = if Id.Map.mem n names then warn_meta_collision n in
+    let () = if Id.Map.mem n names then Constr_matching.warn_meta_collision n in
     (names_seen, Id.Map.add n (ids, m) terms)
 
 let add_binders na1 na2 binding_vars ((names,seen), terms as subst) =
@@ -43,7 +39,7 @@ let add_binders na1 na2 binding_vars ((names,seen), terms as subst) =
       let names = Id.Map.add id1 id2 names in
       let seen = Id.Set.add id2 seen in
       let () = if Id.Map.mem id1 terms then
-        warn_meta_collision id1 in
+        Constr_matching.warn_meta_collision id1 in
       ((names,seen), terms)
   | _ -> subst
 
